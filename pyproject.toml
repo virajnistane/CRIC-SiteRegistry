@@ -8,6 +8,7 @@ dependencies = [
     "django>=6.0.3",
     "django-stubs>=6.0.1",
     "djangorestframework>=3.17.0",
+    "djangorestframework-stubs>=3.16.8",
     "psycopg2-binary>=2.9.11",
     "pytest>=9.0.2",
     "pytest-django>=4.12.0",
