@@ -23,7 +23,7 @@ A Django REST Framework application for managing cricket site registrations.
 
 3. **Build and run with Docker Compose**
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
 4. **Access the application**
@@ -32,7 +32,7 @@ A Django REST Framework application for managing cricket site registrations.
 
 5. **Create a superuser** (in a new terminal)
    ```bash
-   docker-compose exec web python manage.py createsuperuser
+   docker compose exec web python manage.py createsuperuser
    ```
 
 ## Local Development
@@ -66,12 +66,12 @@ A Django REST Framework application for managing cricket site registrations.
 
 ## Docker Commands
 
-- **Start services**: `docker-compose up`
-- **Start in background**: `docker-compose up -d`
-- **Stop services**: `docker-compose down`
-- **View logs**: `docker-compose logs -f`
-- **Rebuild**: `docker-compose up --build`
-- **Run management commands**: `docker-compose exec web python manage.py <command>`
+- **Start services**: `docker compose up`
+- **Start in background**: `docker compose up -d`
+- **Stop services**: `docker compose down`
+- **View logs**: `docker compose logs -f`
+- **Rebuild**: `docker compose up --build`
+- **Run management commands**: `docker compose exec web python manage.py <command>`
 
 ## Database
 
