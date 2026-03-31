@@ -77,9 +77,17 @@ A Django REST Framework application for managing cricket site registrations.
 
 The application uses PostgreSQL in Docker. The data is persisted in a Docker volume named `postgres_data`.
 
-To access the database directly:
+**Port Mapping:** PostgreSQL is exposed on port **5433** on your host machine (to avoid conflicts with local PostgreSQL instances).
+
+To access the database directly from inside the container:
 ```bash
-docker-compose exec db psql -U postgres -d site_registry
+docker compose exec db psql -U postgres -d site_registry
+```
+
+To connect from your host machine:
+```bash
+psql -h localhost -p 5433 -U postgres -d site_registry
+# Or use any PostgreSQL client with: localhost:5433
 ```
 
 ## Environment Variables
