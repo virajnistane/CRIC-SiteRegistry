@@ -3,9 +3,9 @@ services:
     image: postgres:17-alpine
     container_name: cric_site_registry_db
     environment:
-      POSTGRES_DB: site_registry
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -28,14 +28,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DEBUG: "True"
-      SECRET_KEY: "django-insecure-fp#d%rf(+u90ude8++4uhpi+qfk26&t_m=yxpqpl@o4f!+1jg^"
-      DATABASE_URL: "postgresql://postgres:postgres@db:5432/site_registry"
-      POSTGRES_NAME: site_registry
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      DEBUG: ${DEBUG:-True}
+      SECRET_KEY: ${SECRET_KEY}
+      POSTGRES_NAME: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
+      POSTGRES_PORT: 5432
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
     depends_on:
       db:
         condition: service_healthy

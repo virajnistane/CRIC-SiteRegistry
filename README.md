@@ -93,6 +93,29 @@ See `.env.example` for all available configuration options:
 - `POSTGRES_HOST`: Database host
 - `POSTGRES_PORT`: Database port
 
+## Security Best Practices
+
+**⚠️ IMPORTANT: Never commit the `.env` file to version control!**
+
+1. **SECRET_KEY**: Generate a new secret key for production:
+   ```bash
+   python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+   ```
+
+2. **Database Credentials**: Use strong passwords for production:
+   - Minimum 16 characters
+   - Mix of uppercase, lowercase, numbers, and symbols
+   - Different from default values
+
+3. **DEBUG Mode**: Always set `DEBUG=False` in production
+
+4. **ALLOWED_HOSTS**: Set specific domains for production (not `*`)
+
+5. **Environment Files**:
+   - `.env` is gitignored and contains actual secrets
+   - `.env.example` is committed as a template (no real secrets)
+   - [docker-compose.yml](docker-compose.yml) references environment variables, not hardcoded values
+
 ## Project Structure
 
 ```
