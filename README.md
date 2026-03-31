@@ -1,6 +1,8 @@
 # Cricket Site Registry
 
-A Django REST Framework application for managing cricket site registrations.
+A Django REST Framework application for managing infrastructure site registrations.
+
+> **Note:** Despite the "cricket" name, this application manages infrastructure/data center sites with CPU capacity, storage, and operational status tracking.
 
 ## 🚀 Quick Start
 
@@ -189,12 +191,52 @@ See `.env.example` for a complete template.
 cric-site-registry/
 ├── src/
 │   ├── site_registry/   # Django project settings
+│   │   ├── settings.py  # Main configuration
+│   │   ├── urls.py      # URL routing
+│   │   └── views.py     # Welcome API view
 │   └── sites/          # Sites app
-├── manage.py           # Django management script
-├── Dockerfile          # Docker configuration
-├── docker-compose.yml  # Docker Compose configuration
-└── pyproject.toml      # Python dependencies
+│       ├── models.py    # Site model (name, region, status, cpu_capacity, storage_tb)
+│       ├── serializers.py
+│       ├── views.py
+│       └── tests/
+├── scripts/             # Helper scripts
+│   ├── setup-docker-env.sh
+│   └── setup-local-env.sh
+├── run-docker.sh        # One-command Docker startup
+├── run-local.sh         # One-command local startup
+├── test-api.sh          # API testing script
+├── manage.py            # Django management script
+├── Dockerfile           # Docker configuration
+├── docker-compose.yml   # Docker Compose configuration
+├── pyproject.toml       # Python dependencies
+└── .env                 # Environment variables (not in git)
 ```
+
+## Site Model Fields
+
+The Site model represents infrastructure/data center sites with the following fields:
+
+- **name** (CharField): Unique site identifier (e.g., "us-east-1", "eu-west-1")
+- **region** (CharField): Geographic region (e.g., "North America", "Europe", "Asia")
+- **status** (CharField): Operational status - choices: `online`, `offline`, `degraded`
+- **cpu_capacity** (IntegerField): CPU capacity in cores
+- **storage_tb** (FloatField): Storage capacity in terabytes
+
+### Example Site Creation
+
+```bash
+curl -X POST http://localhost:8000/api/sites/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "us-east-1",
+    "region": "North America",
+    "status": "online",
+    "cpu_capacity": 256,
+    "storage_tb": 100.5
+  }'
+```
+
+See [API.md](API.md) for complete API documentation.
 
 ## Testing
 
@@ -216,7 +258,11 @@ docker compose exec web pytest --cov
 
 ### Run Tests Locally
 
+**Important:** Ensure Docker PostgreSQL is running first:
 ```bash
+# Start database
+docker compose up -d db
+
 # Activate virtual environment
 source .venv/bin/activate
 
@@ -279,9 +325,24 @@ sudo systemctl stop postgresql
 ### "Cannot connect to database" when running locally
 
 Make sure:
-1. Docker PostgreSQL is running: `docker compose ps`
-2. Your `.env` file has `POSTGRES_HOST=localhost` and `POSTGRES_PORT=5433`
-3. The `.env` file is in the project root directory
+1. **Docker PostgreSQL is running**: `docker compose up -d db`
+2. Check container status: `docker compose ps`
+3. Your `.env` file has `POSTGRES_HOST=localhost` and `POSTGRES_PORT=5433`
+4. The `.env` file is in the project root directory
+
+### Tests fail with "Connection refused"
+
+This means the PostgreSQL database isn't running:
+```bash
+# Start the database
+docker compose up -d db
+
+# Verify it's running
+docker compose ps
+
+# Run tests
+pytest
+```
 
 ### "Module not found" errors
 

@@ -34,3 +34,4 @@ test-api.sh
 scripts/
 run-docker.sh
 run-local.sh
+docs/COMMANDS.txt
