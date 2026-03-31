@@ -28,3 +28,9 @@ media/
 .idea/
 *.swp
 *.swo
+
+# scripts
+test-api.sh
+scripts/
+run-docker.sh
+run-local.sh

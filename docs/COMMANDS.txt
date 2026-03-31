@@ -1,0 +1,61 @@
+╔══════════════════════════════════════════════════════════════╗
+║          Cricket Site Registry - Server Commands             ║
+╚══════════════════════════════════════════════════════════════╝
+
+🐳 DOCKER MODE (Production-like)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Start:     ./run-docker.sh
+  Stop:      docker compose down  (or Ctrl+C)
+  URL:       http://localhost:8000
+  Server:    Gunicorn (3 workers)
+  Logs:      docker compose logs -f web
+
+💻 LOCAL MODE (Fast development)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Start:     ./run-local.sh
+  Stop:      Ctrl+C
+  URL:       http://localhost:8000  
+  Server:    Django runserver (auto-reload)
+  Shell:     source .venv/bin/activate
+
+🔧 COMMON COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Docker:
+    docker compose exec web python manage.py <command>
+    docker compose exec web pytest
+
+  Local:
+    python manage.py <command>
+    pytest
+
+📦 MANAGEMENT COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Create superuser:
+    Docker:  docker compose exec web python manage.py createsuperuser
+    Local:   python manage.py createsuperuser
+
+  Migrations:
+    Docker:  docker compose exec web python manage.py migrate
+    Local:   python manage.py migrate
+
+  Shell:
+    Docker:  docker compose exec web python manage.py shell
+    Local:   python manage.py shell
+
+🧪 TESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Docker:  docker compose exec web pytest -v
+  Local:   pytest -v
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Development:  DEVELOPMENT.md
+  Testing:      TESTING.md
+  
+🚦 CURRENT STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✅ Docker:      RUNNING on http://localhost:8000
+  🗄️  Database:   RUNNING on localhost:5433
+  ⚙️  Mode:       Docker (Gunicorn)
+
+╚══════════════════════════════════════════════════════════════╝

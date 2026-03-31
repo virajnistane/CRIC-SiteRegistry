@@ -2,6 +2,27 @@
 
 A Django REST Framework application for managing cricket site registrations.
 
+## 🚀 Quick Start
+
+**Docker (Recommended):**
+```bash
+./run-docker.sh
+```
+Then visit http://localhost:8000
+
+**Local Development:**
+```bash
+./run-local.sh
+```
+Then visit http://localhost:8000
+
+📖 **Documentation:**
+- [DEVELOPMENT.md](DEVELOPMENT.md) - Server setup & development guide
+- [API.md](API.md) - API endpoints & usage examples
+- [TESTING.md](TESTING.md) - Testing guide
+
+---
+
 ## Prerequisites
 
 - Docker and Docker Compose
