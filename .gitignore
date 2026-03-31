@@ -11,6 +11,9 @@ wheels/
 
 # Environment variables
 .env
+.env.local
+.env.sqlite
+.env.postgres
 
 # Django
 db.sqlite3
