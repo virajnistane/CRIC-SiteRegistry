@@ -1,3 +1,14 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["site_registry*", "sites*"]
+
 [project]
 name = "cric-site-registry"
 version = "0.1.0"
@@ -21,3 +32,10 @@ dev = [
     "isort>=8.0.1",
     "ruff>=0.15.7",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["src"]
+python_files = ["tests.py", "test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

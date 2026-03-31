@@ -128,8 +128,9 @@ See `.env.example` for all available configuration options:
 
 ```
 cric-site-registry/
-├── site_registry/       # Django project settings
-├── sites/              # Sites app
+├── src/
+│   ├── site_registry/   # Django project settings
+│   └── sites/          # Sites app
 ├── manage.py           # Django management script
 ├── Dockerfile          # Docker configuration
 ├── docker-compose.yml  # Docker Compose configuration
