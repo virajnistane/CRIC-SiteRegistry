@@ -18,11 +18,13 @@ from django.contrib import admin # type: ignore
 from django.urls import path, include # type: ignore
 from rest_framework.routers import DefaultRouter # type: ignore
 from sites.views import SiteViewSet
+from .views import WelcomeView
 
 router = DefaultRouter()
 router.register(r'sites', SiteViewSet, basename='site')
 
 urlpatterns = [
+    path('', WelcomeView.as_view(), name='welcome'),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
 ]
