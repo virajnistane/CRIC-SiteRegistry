@@ -12,7 +12,7 @@ include = ["site_registry*", "sites*"]
 [project]
 name = "cric-site-registry"
 version = "0.1.0"
-description = "Add your description here"
+description = "Computing Resource Information Catalogue - A Django REST API for managing infrastructure site registrations"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

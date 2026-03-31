@@ -17,7 +17,7 @@ curl http://localhost:8000/
 **Response:**
 ```json
 {
-  "message": "Welcome to Cricket Site Registry API",
+  "message": "Welcome to CRIC (Computing Resource Information Catalogue) API",
   "version": "0.1.0",
   "endpoints": {
     "admin": "/admin/",

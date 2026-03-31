@@ -1,8 +1,10 @@
-# Cricket Site Registry
+# CRIC Site Registry
 
-A Django REST Framework application for managing infrastructure site registrations.
+A Django REST Framework application for managing computing resource site registrations.
 
-> **Note:** Despite the "cricket" name, this application manages infrastructure/data center sites with CPU capacity, storage, and operational status tracking.
+**CRIC** = **Computing Resource Information Catalogue**
+
+> This is a toy project demonstrating hands-on experience with Django REST Framework, Docker, PostgreSQL, and infrastructure management APIs. Inspired by [CERN's CRIC system](https://careers.cern/jobs/it-ce-lcg-2026-54-grap/) for cataloging distributed computing resources.
 
 ## 🚀 Quick Start
 
