@@ -1,0 +1,75 @@
+from __future__ import annotations
+
+from qasync import asyncSlot
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QTableView,
+    QVBoxLayout,
+    QWidget,
+)
+from PyQt6.QtCore import Qt
+
+from desktop.api_client import SiteApiClient
+from desktop.widgets.site_table import SiteTableModel
+from desktop.widgets.status_panel import StatusPanel
+
+
+class MainWindow(QMainWindow):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("CRIC Site Registry Desktop Client")
+        self.resize(1100, 700)
+
+        self.api = SiteApiClient()
+        self.table_model = SiteTableModel([])
+        self.table_view = QTableView()
+        self.table_view.setModel(self.table_model)
+        self.table_view.setSortingEnabled(False)
+
+        self.status_panel = StatusPanel()
+        self.status_panel.setMinimumWidth(280)
+
+        self.refresh_button = QPushButton("Refresh")
+        self.refresh_button.clicked.connect(self.load_sites)
+
+        self.status_label = QLabel("Ready")
+
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.addWidget(self.refresh_button)
+        left_layout.addWidget(self.table_view)
+        left_layout.addWidget(self.status_label)
+
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.addWidget(QLabel("Alerts"))
+        right_layout.addWidget(self.status_panel)
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.addWidget(left_panel)
+        splitter.addWidget(right_panel)
+        splitter.setSizes([800, 300])
+
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.addWidget(splitter)
+        self.setCentralWidget(container)
+
+    @asyncSlot()
+    async def load_sites(self) -> None:
+        self.status_label.setText("Loading...")
+        try:
+            sites = await self.api.list_sites()
+        except Exception as exc:
+            QMessageBox.critical(self, "API Error", str(exc))
+            self.status_label.setText("Load failed")
+            return
+
+        self.table_model.update_sites(sites)
+        self.status_panel.update_from_sites(sites)
+        self.status_label.setText(f"Loaded {len(sites)} sites")
