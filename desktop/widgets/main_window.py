@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from qasync import asyncSlot # type: ignore
+import asyncio
+
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -12,7 +13,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QModelIndex
 
 from desktop.api_client import SiteApiClient
 from desktop.widgets.site_table import SiteTableModel
@@ -28,16 +29,17 @@ class MainWindow(QMainWindow):
 
         self.api = SiteApiClient()
         self.table_model = SiteTableModel([])
+        self._tasks: set[asyncio.Task] = set()
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSortingEnabled(False)
-        self.table_view.doubleClicked.connect(self.open_selected_site)
+        self.table_view.doubleClicked.connect(self.on_table_double_clicked)
 
         self.status_panel = StatusPanel()
         self.status_panel.setMinimumWidth(280)
 
         self.refresh_button = QPushButton("Refresh")
-        self.refresh_button.clicked.connect(self.load_sites)
+        self.refresh_button.clicked.connect(self.on_refresh_clicked)
 
         self.status_label = QLabel("Ready")
 
@@ -62,13 +64,36 @@ class MainWindow(QMainWindow):
         layout.addWidget(splitter)
         self.setCentralWidget(container)
 
-    @asyncSlot()
+    def _track_task(self, coro) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+        task = loop.create_task(coro)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    def on_refresh_clicked(self, _checked: bool = False) -> None:
+        self._track_task(self.load_sites())
+
+    def on_table_double_clicked(self, index: QModelIndex) -> None:
+        self._track_task(self.open_selected_site(index))
+
     async def load_sites(self) -> None:
         self.status_label.setText("Loading...")
         try:
             sites = await self.api.list_sites()
         except Exception as exc:
-            QMessageBox.critical(self, "API Error", str(exc))
+            QMessageBox.critical(
+                self,
+                "API Error",
+                (
+                    f"Cannot connect to API at {self.api.base_url}\n\n"
+                    f"Details: {exc}\n\n"
+                    "Start backend with:\n"
+                    "uv run python manage.py runserver 127.0.0.1:8000"
+                ),
+            )
             self.status_label.setText("Load failed")
             return
 
@@ -76,8 +101,10 @@ class MainWindow(QMainWindow):
         self.status_panel.update_from_sites(sites)
         self.status_label.setText(f"Loaded {len(sites)} sites")
 
-    @asyncSlot()
-    async def open_selected_site(self, index) -> None:
+    async def open_selected_site(self, index: QModelIndex) -> None:
+        if not index.isValid():
+            return
+
         site = self.table_model.site_at_row(index.row())
         dialog = SiteDetailDialog(site, self)
         if dialog.exec() != dialog.DialogCode.Accepted:

@@ -18,7 +18,7 @@ def main() -> None:
     window.show()
 
     with loop:
-        window.load_sites()
+        window.on_refresh_clicked()
         loop.run_forever()
 
 
