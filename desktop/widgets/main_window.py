@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qasync import asyncSlot
+from qasync import asyncSlot # type: ignore
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -17,6 +17,7 @@ from PyQt6.QtCore import Qt
 from desktop.api_client import SiteApiClient
 from desktop.widgets.site_table import SiteTableModel
 from desktop.widgets.status_panel import StatusPanel
+from desktop.widgets.site_detail import SiteDetailDialog
 
 
 class MainWindow(QMainWindow):
@@ -30,6 +31,7 @@ class MainWindow(QMainWindow):
         self.table_view = QTableView()
         self.table_view.setModel(self.table_model)
         self.table_view.setSortingEnabled(False)
+        self.table_view.doubleClicked.connect(self.open_selected_site)
 
         self.status_panel = StatusPanel()
         self.status_panel.setMinimumWidth(280)
@@ -73,3 +75,18 @@ class MainWindow(QMainWindow):
         self.table_model.update_sites(sites)
         self.status_panel.update_from_sites(sites)
         self.status_label.setText(f"Loaded {len(sites)} sites")
+
+    @asyncSlot()
+    async def open_selected_site(self, index) -> None:
+        site = self.table_model.site_at_row(index.row())
+        dialog = SiteDetailDialog(site, self)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+
+        try:
+            await self.api.update_site(site.id, dialog.payload())
+        except Exception as exc:
+            QMessageBox.critical(self, "Update Error", str(exc))
+            return
+
+        await self.load_sites()

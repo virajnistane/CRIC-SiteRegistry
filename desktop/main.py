@@ -4,7 +4,7 @@ import asyncio
 import sys
 
 from PyQt6.QtWidgets import QApplication
-from qasync import QEventLoop
+from qasync import QEventLoop # type: ignore
 
 from desktop.widgets.main_window import MainWindow
 
@@ -18,7 +18,7 @@ def main() -> None:
     window.show()
 
     with loop:
-        loop.create_task(window.load_sites())
+        window.load_sites()
         loop.run_forever()
 
 
