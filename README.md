@@ -65,6 +65,8 @@ Then visit http://localhost:8000
    docker compose exec web python manage.py createsuperuser
    ```
 
+   Note: Django admin credentials are not stored in `.env`. Create a new superuser or reset the password if you lose access.
+
 ## Local Development (Alternative)
 
 **Note:** Docker is recommended. Local development requires additional setup.
@@ -74,17 +76,17 @@ Then visit http://localhost:8000
    docker compose up -d db
    ```
 
-2. **Create and activate virtual environment**
+2. **Set up the local environment**
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv sync
    ```
 
 3. **Install dependencies**
    ```bash
-   pip install -e .
-   # Or using uv: uv pip install -e .
+   uv sync
    ```
+
+   `uv sync` creates and updates the project environment in `.venv`. If you prefer a manual virtual environment, activate it and run the same management commands without `uv run`.
 
 4. **Configure environment for local development**
    
@@ -96,12 +98,23 @@ Then visit http://localhost:8000
 
 5. **Run migrations**
    ```bash
-   python manage.py migrate
+   uv run python manage.py migrate
    ```
 
-6. **Start development server**
+6. **Create or recover the admin user**
    ```bash
-   python manage.py runserver
+   # Create a new admin user
+   uv run python manage.py createsuperuser
+
+   # Reset the password for an existing admin user
+   uv run python manage.py changepassword <username>
+   ```
+
+   Note: Django admin credentials are not stored in `.env`. Use `createsuperuser` when no admin account exists, or `changepassword` when you only need to reset the password.
+
+7. **Start development server**
+   ```bash
+   uv run python manage.py runserver
    ```
 
 ## Docker Commands
@@ -265,20 +278,19 @@ docker compose exec web pytest --cov
 # Start database
 docker compose up -d db
 
-# Activate virtual environment
-source .venv/bin/activate
-
 # Run tests
-pytest
+uv run pytest
 
 # With verbose output
-pytest -v
+uv run pytest -v
 ```
 
 The test suite uses:
 - **pytest** - Test framework
 - **pytest-django** - Django integration for pytest
 - **PostgreSQL** - Same database as production for accurate testing
+
+If you already activated `.venv`, `pytest` and `pytest -v` also work.
 
 ## Contributing
 
