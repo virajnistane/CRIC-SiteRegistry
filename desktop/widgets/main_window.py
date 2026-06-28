@@ -14,6 +14,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from PyQt6.QtCore import Qt, QModelIndex
+from PyQt6.QtCore import QSortFilterProxyModel
+from PyQt6.QtWidgets import QLineEdit
 
 from desktop.api_client import SiteApiClient
 from desktop.models import SiteDTO
@@ -46,6 +48,17 @@ class MainWindow(QMainWindow):
         self.delete_button = QPushButton("Delete Selected Site")
         self.delete_button.clicked.connect(self.on_delete_clicked)
 
+
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Filter by name, region, or status")
+
+        self.proxy_model = QSortFilterProxyModel(self)
+        self.proxy_model.setSourceModel(self.table_model)
+        self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.proxy_model.setFilterKeyColumn(-1)
+        self.table_view.setModel(self.proxy_model)
+        self.search_box.textChanged.connect(self.proxy_model.setFilterFixedString)
+
         self.status_label = QLabel("Ready")
 
         left_panel = QWidget()
@@ -55,6 +68,7 @@ class MainWindow(QMainWindow):
         buttons_layout.addWidget(self.create_button)
         buttons_layout.addWidget(self.delete_button)
         buttons_layout.addStretch()
+        left_layout.addWidget(self.search_box)
         left_layout.addLayout(buttons_layout)
         left_layout.addWidget(self.table_view)
         left_layout.addWidget(self.status_label)
