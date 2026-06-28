@@ -56,10 +56,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get install -y libgl1 libxcb-xinerama0   # Qt headless deps
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --group desktop
-      - run: uv run pytest desktop/tests/
+      - name: Install system dependencies for Qt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libxcb-xinerama0
+      - name: Install Python dependencies
+        run: uv sync --group desktop
+      - name: Run desktop tests
         env:
-          QT_QPA_PLATFORM: offscreen   # headless Qt in CI
-          DJANGO_SETTINGS_MODULE: site_registry.settings
+          QT_QPA_PLATFORM: offscreen
+        run: uv run pytest desktop/tests/
