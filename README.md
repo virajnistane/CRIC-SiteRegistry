@@ -21,9 +21,29 @@ Then visit http://localhost:8000
 Then visit http://localhost:8000
 
 📖 **Documentation:**
-- [DEVELOPMENT.md](DEVELOPMENT.md) - Server setup & development guide
-- [API.md](API.md) - API endpoints & usage examples
-- [TESTING.md](TESTING.md) - Testing guide
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - Server setup & development guide
+- [docs/API.md](docs/API.md) - API endpoints & usage examples
+- [docs/TESTING.md](docs/TESTING.md) - Testing guide
+
+## Desktop Client
+
+The project also includes a PyQt desktop client for managing sites.
+
+1. **Start backend API** (Docker or local):
+   ```bash
+   uv run python manage.py runserver 127.0.0.1:8000
+   ```
+
+2. **Run desktop client**:
+   ```bash
+   uv run python -m desktop.main
+   ```
+
+Desktop client includes:
+- Top action row with **Refresh**, **Create New Site**, and **Delete Selected Site** buttons
+- Search box filter (name, region, status)
+- Double-click row to edit a site
+- Alerts/status panel on the right
 
 ---
 
@@ -251,7 +271,7 @@ curl -X POST http://localhost:8000/api/sites/ \
   }'
 ```
 
-See [API.md](API.md) for complete API documentation.
+See [docs/API.md](docs/API.md) for complete API documentation.
 
 ## Testing
 
