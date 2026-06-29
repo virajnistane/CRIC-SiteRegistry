@@ -45,6 +45,41 @@ Desktop client includes:
 - Double-click row to edit a site
 - Alerts/status panel on the right
 
+### Optional C++ Site Scorer
+
+The desktop client can use the optional `site_scorer` C++ extension to rank sites and show a **Score** column.
+
+1. **Install the C++ dependency group and system prerequisites**:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y cmake g++ python3-dev
+   uv sync --group cpp
+   ```
+
+2. **Configure CMake from the repository root**:
+   ```bash
+   cmake -S . -B build/cpp \
+     -DCMAKE_BUILD_TYPE=Release \
+     -DPython_EXECUTABLE="$(uv run which python)"
+   ```
+
+3. **Build the extension**:
+   ```bash
+   cmake --build build/cpp --config Release
+   ```
+
+4. **Install the compiled module where Python can import it**:
+   ```bash
+   cmake --install build/cpp --prefix .
+   ```
+
+5. **Verify the module imports**:
+   ```bash
+   uv run python -c "import site_scorer; print(site_scorer.__doc__)"
+   ```
+
+If the extension is not built, the desktop client falls back to the pure-Python scorer so the UI still works.
+
 ---
 
 ## Prerequisites
@@ -224,6 +259,9 @@ See `.env.example` for a complete template.
 
 ```
 cric-site-registry/
+├── cpp/                # Optional C++ scorer extension built with CMake/pybind11
+├── desktop/            # Django-backed Qt desktop client
+│   ├── scorer.py       # Python wrapper around the optional C++ scorer
 ├── src/
 │   ├── site_registry/   # Django project settings
 │   │   ├── settings.py  # Main configuration
