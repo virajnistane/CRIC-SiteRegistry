@@ -19,7 +19,7 @@ def rank_sites(sites: list[SiteDTO]) -> list[tuple[str, float]]:
     Tries the C++ extension first; falls back to pure Python if unavailable.
     """
     try:
-        import site_scorer as _scorer
+        import site_scorer as _scorer # type: ignore
 
         scores = _scorer.rank_sites(
             [s.name       for s in sites],

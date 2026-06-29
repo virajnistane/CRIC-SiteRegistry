@@ -22,7 +22,7 @@ from desktop.models import SiteDTO
 from desktop.widgets.site_table import SiteTableModel
 from desktop.widgets.status_panel import StatusPanel
 from desktop.widgets.site_detail import SiteDetailDialog
-
+from desktop.scorer import rank_sites as cpp_rank_sites
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -127,7 +127,10 @@ class MainWindow(QMainWindow):
             self.status_label.setText("Load failed")
             return
 
-        self.table_model.update_sites(sites)
+        # Run C++ scorer (falls back to Python if .so not compiled)
+        scores = cpp_rank_sites(sites)
+
+        self.table_model.update_sites(sites, scores)
         self.status_panel.update_from_sites(sites)
         self.status_label.setText(f"Loaded {len(sites)} sites")
 
