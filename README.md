@@ -136,14 +136,9 @@ If the extension is not built, the desktop client falls back to the pure-Python 
    uv sync
    ```
 
-3. **Install dependencies**
-   ```bash
-   uv sync
-   ```
+   `uv sync` creates and updates the project environment in `.venv`.
 
-   `uv sync` creates and updates the project environment in `.venv`. If you prefer a manual virtual environment, activate it and run the same management commands without `uv run`.
-
-4. **Configure environment for local development**
+3. **Configure environment for local development**
    
    Update `.env` to connect to Docker PostgreSQL from your host:
    ```bash
@@ -151,12 +146,12 @@ If the extension is not built, the desktop client falls back to the pure-Python 
    POSTGRES_PORT=5433       # Docker exposes on 5433 to avoid conflicts
    ```
 
-5. **Run migrations**
+4. **Run migrations**
    ```bash
    uv run python manage.py migrate
    ```
 
-6. **Create or recover the admin user**
+5. **Create or recover the admin user**
    ```bash
    # Create a new admin user
    uv run python manage.py createsuperuser
@@ -167,8 +162,9 @@ If the extension is not built, the desktop client falls back to the pure-Python 
 
    Note: Django admin credentials are not stored in `.env`. Use `createsuperuser` when no admin account exists, or `changepassword` when you only need to reset the password.
 
-7. **Start development server**
+6. **Start development server**
    ```bash
+   docker compose up -d db
    uv run python manage.py runserver
    ```
 
@@ -425,7 +421,7 @@ docker compose down
 docker compose up --build
 
 # Locally
-pip install -e .
+uv sync
 ```
 
 ### Tests failing with "import file mismatch"
