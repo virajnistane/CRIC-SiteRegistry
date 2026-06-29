@@ -1,0 +1,52 @@
+name: C++ binding
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "cpp/**"
+      - "CMakeLists.txt"
+      - "desktop/scorer.py"
+      - "desktop/tests/test_scorer.py"
+      - "desktop/tests/test_cpp_scorer.py"
+      - ".github/workflows/cpp-binding.yml"
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-dev
+
+      - name: Install Python dependencies (with pybind11)
+        run: uv sync --group cpp
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPython_EXECUTABLE="$(uv run which python)"
+
+      - name: Build extension
+        run: cmake --build build --config Release
+
+      - name: Install .so to repo root
+        run: cmake --install build --prefix build
+
+      - name: Copy .so to importable location
+        run: |
+          # cmake installs to build/lib/ or similar; copy to repo root
+          find build -name "site_scorer*.so" -exec cp {} . \;
+
+      - name: Run C++ scorer tests
+        run: uv run pytest desktop/tests/test_scorer.py desktop/tests/test_cpp_scorer.py -v

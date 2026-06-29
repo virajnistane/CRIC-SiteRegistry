@@ -46,8 +46,8 @@ cpp = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["src"]
+pythonpath = ["src", "."]
+testpaths = ["src", "desktop/tests"]
 python_files = ["tests.py", "test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
