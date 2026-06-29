@@ -10,4 +10,4 @@ def test_site_table_model_row_and_column_counts():
     model = SiteTableModel(sites)
 
     assert model.rowCount() == 2
-    assert model.columnCount() == 5
+    assert model.columnCount() == 6  # id, name, region, status, cpu_capacity, storage_tb
