@@ -35,3 +35,6 @@ scripts/
 run-docker.sh
 run-local.sh
 docs/COMMANDS.txt
+
+# dev guides
+dev_guides/
