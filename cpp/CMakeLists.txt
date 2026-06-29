@@ -44,5 +44,5 @@ target_compile_options(site_scorer PRIVATE -O2 -Wall -Wextra)
 # --------------------------------------------------------------------------
 install(
     TARGETS site_scorer
-    LIBRARY DESTINATION "${CMAKE_SOURCE_DIR}/.."
+    LIBRARY DESTINATION "${CMAKE_SOURCE_DIR}"
 )

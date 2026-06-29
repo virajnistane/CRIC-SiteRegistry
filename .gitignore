@@ -6,6 +6,13 @@ dist/
 wheels/
 *.egg-info
 
+# C++ build files
+*.so
+*.pyd
+*.dylib
+site_scorer*.so
+site_scorer*.pyd
+
 # Virtual environments
 .venv
 
