@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QTableView,
     QVBoxLayout,
     QWidget,
+    QTabWidget
 )
 from PyQt6.QtCore import Qt, QModelIndex
 from PyQt6.QtCore import QSortFilterProxyModel
@@ -23,6 +24,11 @@ from desktop.widgets.site_table import SiteTableModel
 from desktop.widgets.status_panel import StatusPanel
 from desktop.widgets.site_detail import SiteDetailDialog
 from desktop.scorer import rank_sites as cpp_rank_sites
+
+from desktop.rse_client import RseApiClient
+from desktop.rse_models import RseDTO
+from desktop.widgets.rse_table import RseTableModel
+from desktop.widgets.rse_detail import RseDetailDialog as RseDialog
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -83,9 +89,43 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right_panel)
         splitter.setSizes([800, 300])
 
+        # RSE tab widgets
+        self.rse_api         = RseApiClient()
+        self.rse_table_model = RseTableModel([])
+
+        self.rse_table_view = QTableView()
+        self.rse_table_view.setModel(self.rse_table_model)
+        self.rse_table_view.doubleClicked.connect(self.on_rse_double_clicked)
+
+        self.rse_refresh_btn = QPushButton("Refresh RSEs")
+        self.rse_refresh_btn.clicked.connect(self.on_rse_refresh_clicked)
+        self.rse_create_btn  = QPushButton("Create RSE")
+        self.rse_create_btn.clicked.connect(self.on_rse_create_clicked)
+        self.rse_delete_btn  = QPushButton("Delete RSE")
+        self.rse_delete_btn.clicked.connect(self.on_rse_delete_clicked)
+
+        self.rse_status_label = QLabel("RSEs not loaded")
+
+        rse_btns = QHBoxLayout()
+        rse_btns.addWidget(self.rse_refresh_btn)
+        rse_btns.addWidget(self.rse_create_btn)
+        rse_btns.addWidget(self.rse_delete_btn)
+        rse_btns.addStretch()
+
+        rse_panel = QWidget()
+        rse_layout = QVBoxLayout(rse_panel)
+        rse_layout.addLayout(rse_btns)
+        rse_layout.addWidget(self.rse_table_view)
+        rse_layout.addWidget(self.rse_status_label)
+
+        # Tab widget
+        tabs = QTabWidget()
+        tabs.addTab(splitter, "Sites")   # existing splitter becomes tab 0
+        tabs.addTab(rse_panel, "RSEs")   # new RSE panel is tab 1
+
         container = QWidget()
         layout = QHBoxLayout(container)
-        layout.addWidget(splitter)
+        layout.addWidget(tabs)
         self.setCentralWidget(container)
 
     def _track_task(self, coro) -> None:
@@ -199,3 +239,78 @@ class MainWindow(QMainWindow):
 
         self.status_label.setText("Site deleted")
         await self.load_sites()
+
+
+    def on_rse_refresh_clicked(self, _=False) -> None:
+        self._track_task(self.load_rses())
+
+    def on_rse_create_clicked(self, _=False) -> None:
+        self._track_task(self.create_rse())
+
+    def on_rse_delete_clicked(self, _=False) -> None:
+        self._track_task(self.delete_selected_rse())
+
+    def on_rse_double_clicked(self, index: QModelIndex) -> None:
+        self._track_task(self.open_selected_rse(index))
+
+    async def load_rses(self) -> None:
+        self.rse_status_label.setText("Loading RSEs...")
+        try:
+            rses = await self.rse_api.list_rses()
+        except Exception as exc:
+            QMessageBox.critical(self, "RSE API Error", str(exc))
+            self.rse_status_label.setText("Load failed")
+            return
+        self.rse_table_model.update_rses(rses)
+        self.rse_status_label.setText(f"Loaded {len(rses)} RSEs")
+
+    async def open_selected_rse(self, index: QModelIndex) -> None:
+        if not index.isValid():
+            return
+        rse = self.rse_table_model.rse_at_row(index.row())
+        dialog = RseDialog(rse, self)
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        try:
+            await self.rse_api.update_rse(rse.id, dialog.payload())
+        except Exception as exc:
+            QMessageBox.critical(self, "RSE Update Error", str(exc))
+            return
+        await self.load_rses()
+
+    async def create_rse(self) -> None:
+        template = RseDTO(id=0, name="", site=1, site_name="",
+                        protocol="davs", deterministic=True,
+                        free_tb=0.0, used_tb=0.0,
+                        total_tb=0.0, utilisation_pct=0.0, enabled=True)
+        dialog = RseDialog(template, self)
+        dialog.setWindowTitle("Create RSE")
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        try:
+            await self.rse_api.create_rse(dialog.payload())
+        except Exception as exc:
+            QMessageBox.critical(self, "RSE Create Error", str(exc))
+            return
+        await self.load_rses()
+
+    async def delete_selected_rse(self) -> None:
+        index = self.rse_table_view.currentIndex()
+        if not index.isValid():
+            QMessageBox.information(self, "Delete RSE", "Select an RSE to delete.")
+            return
+        rse = self.rse_table_model.rse_at_row(index.row())
+        confirm = QMessageBox.question(
+            self, "Delete RSE",
+            f"Delete '{rse.name}'? This cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            await self.rse_api.delete_rse(rse.id)
+        except Exception as exc:
+            QMessageBox.critical(self, "RSE Delete Error", str(exc))
+            return
+        await self.load_rses()
