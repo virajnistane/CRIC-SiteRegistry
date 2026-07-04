@@ -5,5 +5,6 @@ from .serializers import SiteSerializer # type: ignore
 
 # Create your views here.
 class SiteViewSet(ModelViewSet):
-    queryset = Site.objects.all()
+    # queryset = Site.objects.all()
+    queryset = Site.objects.prefetch_related("rses").all()
     serializer_class = SiteSerializer
