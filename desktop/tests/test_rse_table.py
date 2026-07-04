@@ -13,7 +13,7 @@ def _make_rse(**kwargs) -> RseDTO:
         enabled=True,
     )
     defaults.update(kwargs)
-    return RseDTO(**defaults)
+    return RseDTO(**defaults) # type: ignore
 
 
 def test_row_and_column_count(qtbot):
