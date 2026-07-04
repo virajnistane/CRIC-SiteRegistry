@@ -18,10 +18,12 @@ from django.contrib import admin # type: ignore
 from django.urls import path, include # type: ignore
 from rest_framework.routers import DefaultRouter # type: ignore
 from sites.views import SiteViewSet
+from rucio.views import RSEViewSet
 from .views import WelcomeView
 
 router = DefaultRouter()
 router.register(r'sites', SiteViewSet, basename='site')
+router.register(r"rses",  RSEViewSet,  basename="rse")
 
 urlpatterns = [
     path('', WelcomeView.as_view(), name='welcome'),
