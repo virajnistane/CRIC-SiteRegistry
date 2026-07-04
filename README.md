@@ -31,6 +31,12 @@ The project also includes a PyQt desktop client for managing sites.
 
 1. **Start backend API** (Docker or local):
    ```bash
+   # Local dev: ensure PostgreSQL is running first
+   docker compose up -d db
+   uv run python manage.py migrate
+   ```
+
+   ```bash
    uv run python manage.py runserver 127.0.0.1:8000
    ```
 
@@ -294,7 +300,7 @@ The Site model represents infrastructure/data center sites with the following fi
 ### Example Site Creation
 
 ```bash
-curl -X POST http://localhost:8000/api/sites/ \
+curl -sS -X POST http://127.0.0.1:8000/api/sites/ \
   -H "Content-Type: application/json" \
   -d '{
     "name": "us-east-1",
@@ -302,8 +308,10 @@ curl -X POST http://localhost:8000/api/sites/ \
     "status": "online",
     "cpu_capacity": 256,
     "storage_tb": 100.5
-  }'
+   }' | python -m json.tool
 ```
+
+Note: `name` must be unique. Reusing the same site name returns HTTP 400.
 
 See [docs/API.md](docs/API.md) for complete API documentation.
 
@@ -410,6 +418,21 @@ docker compose ps
 
 # Run tests
 pytest
+```
+
+### POST `/api/sites/` returns 400 Bad Request
+
+Common causes:
+1. Duplicate `name` value (the field is unique)
+2. Invalid `status` (must be one of: `online`, `offline`, `degraded`)
+3. Missing or malformed JSON payload
+
+Quick check:
+```bash
+curl -sS -X POST http://127.0.0.1:8000/api/sites/ \
+   -H "Content-Type: application/json" \
+   -d '{"name":"cern-prod-2","region":"EU","status":"online","cpu_capacity":4096,"storage_tb":1000}' \
+   | python -m json.tool
 ```
 
 ### "Module not found" errors
