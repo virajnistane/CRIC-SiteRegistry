@@ -1,12 +1,12 @@
 # CRIC Site Registry
 
-A Django REST Framework application for managing computing resource site registrations.
+A Django REST Framework application for managing computing resource site registrations and Rucio Storage Elements (RSEs).
 
 **CRIC** = **Computing Resource Information Catalogue**
 
-> This is a toy project demonstrating hands-on experience with Django REST Framework, Docker, PostgreSQL, and infrastructure management APIs. Inspired by [CERN's CRIC system](https://careers.cern/jobs/it-ce-lcg-2026-54-grap/) for cataloging distributed computing resources.
+> A toy project demonstrating hands-on experience with Django REST Framework, Docker, PostgreSQL, PyQt6 desktop clients, and optional C++ extensions via pybind11. Inspired by CERN's CRIC system for cataloging distributed computing resources.
 
-## 🚀 Quick Start
+## Quick Start
 
 **Docker (Recommended):**
 ```bash
@@ -16,27 +16,28 @@ Then visit http://localhost:8000
 
 **Local Development:**
 ```bash
-./run-local.sh
+docker compose up -d db
+uv sync
+uv run python manage.py migrate
+uv run python manage.py runserver
 ```
 Then visit http://localhost:8000
 
-📖 **Documentation:**
+**Documentation:**
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - Server setup & development guide
 - [docs/API.md](docs/API.md) - API endpoints & usage examples
 - [docs/TESTING.md](docs/TESTING.md) - Testing guide
 
+---
+
 ## Desktop Client
 
-The project also includes a PyQt desktop client for managing sites.
+The project includes a PyQt6 desktop client with a tabbed interface for managing Sites and RSEs.
 
 1. **Start backend API** (Docker or local):
    ```bash
-   # Local dev: ensure PostgreSQL is running first
    docker compose up -d db
    uv run python manage.py migrate
-   ```
-
-   ```bash
    uv run python manage.py runserver 127.0.0.1:8000
    ```
 
@@ -45,11 +46,9 @@ The project also includes a PyQt desktop client for managing sites.
    uv run python -m desktop.main
    ```
 
-Desktop client includes:
-- Top action row with **Refresh**, **Create New Site**, and **Delete Selected Site** buttons
-- Search box filter (name, region, status)
-- Double-click row to edit a site
-- Alerts/status panel on the right
+Desktop client features:
+- **Sites tab** — Refresh, Create, Delete buttons; search/filter by name, region, status; double-click to edit; status/alerts panel; optional C++ scoring column
+- **RSEs tab** — Refresh, Create RSE, Delete RSE buttons; double-click to edit RSE details (protocol, capacity, enabled state)
 
 ### Optional C++ Site Scorer
 
@@ -93,7 +92,7 @@ If the extension is not built, the desktop client falls back to the pure-Python 
 - Docker and Docker Compose
 - Python 3.13+ (for local development)
 
-## Quick Start with Docker (Recommended)
+## Docker Setup (Recommended)
 
 1. **Clone the repository**
    ```bash
@@ -105,8 +104,6 @@ If the extension is not built, the desktop client falls back to the pure-Python 
    ```bash
    cp .env.example .env
    ```
-   
-   For Docker, the default values in `.env.example` work out of the box. The `.env` file is already configured for Docker with `POSTGRES_HOST=db`.
 
 3. **Build and run with Docker Compose**
    ```bash
@@ -119,18 +116,11 @@ If the extension is not built, the desktop client falls back to the pure-Python 
 
 5. **Run migrations and create superuser**
    ```bash
-   # Migrations run automatically on startup, but you can run manually:
    docker compose exec web python manage.py migrate
-   
-   # Create admin user
    docker compose exec web python manage.py createsuperuser
    ```
 
-   Note: Django admin credentials are not stored in `.env`. Create a new superuser or reset the password if you lose access.
-
 ## Local Development (Alternative)
-
-**Note:** Docker is recommended. Local development requires additional setup.
 
 1. **Start Docker PostgreSQL** (for the database)
    ```bash
@@ -142,10 +132,8 @@ If the extension is not built, the desktop client falls back to the pure-Python 
    uv sync
    ```
 
-   `uv sync` creates and updates the project environment in `.venv`.
-
 3. **Configure environment for local development**
-   
+
    Update `.env` to connect to Docker PostgreSQL from your host:
    ```bash
    POSTGRES_HOST=localhost  # Changed from 'db'
@@ -157,20 +145,8 @@ If the extension is not built, the desktop client falls back to the pure-Python 
    uv run python manage.py migrate
    ```
 
-5. **Create or recover the admin user**
+5. **Start development server**
    ```bash
-   # Create a new admin user
-   uv run python manage.py createsuperuser
-
-   # Reset the password for an existing admin user
-   uv run python manage.py changepassword <username>
-   ```
-
-   Note: Django admin credentials are not stored in `.env`. Use `createsuperuser` when no admin account exists, or `changepassword` when you only need to reset the password.
-
-6. **Start development server**
-   ```bash
-   docker compose up -d db
    uv run python manage.py runserver
    ```
 
@@ -183,286 +159,216 @@ If the extension is not built, the desktop client falls back to the pure-Python 
 - **Rebuild**: `docker compose up --build`
 - **Run management commands**: `docker compose exec web python manage.py <command>`
 
-## Database
+---
 
-The application uses PostgreSQL in Docker. The data is persisted in a Docker volume named `postgres_data`.
+## Data Models
 
-**Port Mapping:** PostgreSQL is exposed on port **5433** on your host machine (to avoid conflicts with local PostgreSQL instances).
+### Site
 
-To access the database directly from inside the container:
+Represents an infrastructure/data center site:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | CharField (unique) | Site identifier, e.g. "us-east-1" |
+| `region` | CharField | Geographic region, e.g. "North America" |
+| `status` | CharField | `online`, `offline`, or `degraded` |
+| `cpu_capacity` | IntegerField | CPU capacity in cores |
+| `storage_tb` | FloatField | Storage capacity in TB |
+
+### RSE (Rucio Storage Element)
+
+Represents a named storage resource attached to a Site:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | CharField (unique) | RSE name, e.g. "CERN-PROD_DATADISK" |
+| `site` | ForeignKey → Site | Parent computing site (cascade delete) |
+| `protocol` | CharField | `davs`, `srm`, `gsiftp`, `xrootd`, or `posix` |
+| `deterministic` | BooleanField | Whether LFN→PFN mapping is deterministic |
+| `free_tb` | FloatField | Free space in TB |
+| `used_tb` | FloatField | Used space in TB |
+| `enabled` | BooleanField | Whether the RSE is active |
+
+Computed properties: `total_tb`, `utilisation_pct`
+
+### Example API Calls
+
 ```bash
-docker compose exec db psql -U postgres -d site_registry
+# Create a site
+curl -X POST http://127.0.0.1:8000/api/sites/ \
+  -H "Content-Type: application/json" \
+  -d '{"name":"us-east-1","region":"North America","status":"online","cpu_capacity":256,"storage_tb":100.5}'
+
+# Create an RSE for that site
+curl -X POST http://127.0.0.1:8000/api/rses/ \
+  -H "Content-Type: application/json" \
+  -d '{"name":"US-EAST-1_DATADISK","site":1,"protocol":"xrootd","free_tb":50.0,"used_tb":30.0}'
+
+# List RSEs for a site
+curl http://127.0.0.1:8000/api/rses/?site=1
+
+# Filter by protocol
+curl http://127.0.0.1:8000/api/rses/?protocol=xrootd
 ```
 
-To connect from your host machine:
+See [docs/API.md](docs/API.md) for complete API documentation.
+
+---
+
+## CI/CD
+
+Two GitHub Actions workflows run on push/PR:
+
+- **tests.yml** — Runs Django API tests against PostgreSQL + desktop widget tests (Qt offscreen mode)
+- **cpp-binding.yml** — Builds the C++ scorer extension and runs scorer-specific tests (triggered on changes to `cpp/`, `CMakeLists.txt`, or scorer files)
+
+---
+
+## Testing
+
 ```bash
-psql -h localhost -p 5433 -U postgres -d site_registry
-# Or use any PostgreSQL client with: localhost:5433
+# Run all tests (Docker)
+docker compose exec web pytest
+
+# Run all tests (local — needs PostgreSQL running)
+docker compose up -d db
+uv run pytest
+
+# Backend API tests only
+uv run pytest src/
+
+# Desktop client tests only
+uv run pytest desktop/tests/
+
+# C++ scorer tests
+uv run pytest desktop/tests/test_cpp_scorer.py
+
+# With coverage
+uv run pytest --cov
 ```
 
-## Environment Variables
+See [docs/TESTING.md](docs/TESTING.md) for full details.
 
-The application uses environment variables for configuration, loaded from a `.env` file via `python-dotenv`.
-
-### Configuration Options:
-- `DEBUG`: Enable/disable debug mode (`True`/`False`)
-- `SECRET_KEY`: Django secret key (generate new for production)
-- `POSTGRES_NAME`: Database name
-- `POSTGRES_USER`: Database user
-- `POSTGRES_PASSWORD`: Database password
-- `POSTGRES_HOST`: Database host
-  - **Docker:** `db` (container name)
-  - **Local development:** `localhost`
-- `POSTGRES_PORT`: Database port
-  - **Docker internal:** `5432`
-  - **Host machine:** `5433`
-- `ALLOWED_HOSTS`: Comma-separated list of allowed hosts
-
-### Example Configurations:
-
-**For Docker (default):**
-```env
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
-```
-
-**For Local Development:**
-```env
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5433
-```
-
-See `.env.example` for a complete template.
-
-## Security Best Practices
-
-**⚠️ IMPORTANT: Never commit the `.env` file to version control!**
-
-1. **SECRET_KEY**: Generate a new secret key for production:
-   ```bash
-   python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
-   ```
-
-2. **Database Credentials**: Use strong passwords for production:
-   - Minimum 16 characters
-   - Mix of uppercase, lowercase, numbers, and symbols
-   - Different from default values
-
-3. **DEBUG Mode**: Always set `DEBUG=False` in production
-
-4. **ALLOWED_HOSTS**: Set specific domains for production (not `*`)
-
-5. **Environment Files**:
-   - `.env` is gitignored and contains actual secrets
-   - `.env.example` is committed as a template (no real secrets)
-   - [docker-compose.yml](docker-compose.yml) references environment variables, not hardcoded values
+---
 
 ## Project Structure
 
 ```
 cric-site-registry/
-├── cpp/                # Optional C++ scorer extension built with CMake/pybind11
-├── desktop/            # Django-backed Qt desktop client
-│   ├── scorer.py       # Python wrapper around the optional C++ scorer
+├── cpp/                    # Optional C++ scorer extension (CMake + pybind11)
+│   ├── site_scorer.cpp
+│   └── CMakeLists.txt
+├── desktop/                # PyQt6 desktop client
+│   ├── main.py             # Entry point
+│   ├── config.py           # API base URL config
+│   ├── models.py           # SiteDTO
+│   ├── rse_models.py       # RseDTO
+│   ├── api_client.py       # Site API client (httpx)
+│   ├── rse_client.py       # RSE API client (httpx)
+│   ├── scorer.py           # Python wrapper around optional C++ scorer
+│   ├── widgets/
+│   │   ├── main_window.py  # Tabbed main window (Sites + RSEs)
+│   │   ├── site_table.py   # Site table model/view
+│   │   ├── site_detail.py  # Site create/edit dialog
+│   │   ├── rse_table.py    # RSE table model/view
+│   │   ├── rse_detail.py   # RSE create/edit dialog
+│   │   └── status_panel.py # Alerts and status display
+│   └── tests/              # Desktop widget & scorer tests
 ├── src/
-│   ├── site_registry/   # Django project settings
-│   │   ├── settings.py  # Main configuration
-│   │   ├── urls.py      # URL routing
-│   │   └── views.py     # Welcome API view
-│   └── sites/          # Sites app
-│       ├── models.py    # Site model (name, region, status, cpu_capacity, storage_tb)
+│   ├── site_registry/      # Django project settings
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   └── views.py        # Welcome API view
+│   ├── sites/              # Sites app (CRUD API)
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   └── tests/
+│   └── rucio/              # RSE app (CRUD + filtering + by-site endpoint)
+│       ├── models.py
 │       ├── serializers.py
 │       ├── views.py
 │       └── tests/
-├── scripts/             # Helper scripts
-│   ├── setup-docker-env.sh
-│   └── setup-local-env.sh
-├── run-docker.sh        # One-command Docker startup
-├── run-local.sh         # One-command local startup
-├── test-api.sh          # API testing script
-├── manage.py            # Django management script
-├── Dockerfile           # Docker configuration
-├── docker-compose.yml   # Docker Compose configuration
-├── pyproject.toml       # Python dependencies
-└── .env                 # Environment variables (not in git)
+├── dev_guides/             # Internal development guides
+├── scripts/                # Helper scripts (setup-docker-env, setup-local-env)
+├── .github/workflows/      # CI: tests.yml, cpp-binding.yml
+├── run-docker.sh           # One-command Docker startup
+├── run-local.sh            # One-command local startup
+├── manage.py
+├── Dockerfile
+├── docker-compose.yml
+├── pyproject.toml
+└── .env                    # Environment variables (not in git)
 ```
 
-## Site Model Fields
+---
 
-The Site model represents infrastructure/data center sites with the following fields:
+## Environment Variables
 
-- **name** (CharField): Unique site identifier (e.g., "us-east-1", "eu-west-1")
-- **region** (CharField): Geographic region (e.g., "North America", "Europe", "Asia")
-- **status** (CharField): Operational status - choices: `online`, `offline`, `degraded`
-- **cpu_capacity** (IntegerField): CPU capacity in cores
-- **storage_tb** (FloatField): Storage capacity in terabytes
+| Variable | Docker | Local | Description |
+|----------|--------|-------|-------------|
+| `DEBUG` | `True` | `True` | Enable debug mode |
+| `SECRET_KEY` | (generated) | (generated) | Django secret key |
+| `POSTGRES_HOST` | `db` | `localhost` | Database host |
+| `POSTGRES_PORT` | `5432` | `5433` | Database port |
+| `POSTGRES_NAME` | `site_registry` | `site_registry` | Database name |
+| `POSTGRES_USER` | `postgres` | `postgres` | Database user |
+| `POSTGRES_PASSWORD` | (in .env) | (in .env) | Database password |
+| `ALLOWED_HOSTS` | `*` | `*` | Allowed host headers |
 
-### Example Site Creation
+See `.env.example` for a complete template.
+
+---
+
+## Database
+
+PostgreSQL, persisted in a Docker volume (`postgres_data`). Exposed on port **5433** on the host to avoid conflicts with local PostgreSQL instances.
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8000/api/sites/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "us-east-1",
-    "region": "North America",
-    "status": "online",
-    "cpu_capacity": 256,
-    "storage_tb": 100.5
-   }' | python -m json.tool
+# Access from container
+docker compose exec db psql -U postgres -d site_registry
+
+# Access from host
+psql -h localhost -p 5433 -U postgres -d site_registry
 ```
 
-Note: `name` must be unique. Reusing the same site name returns HTTP 400.
-
-See [docs/API.md](docs/API.md) for complete API documentation.
-
-## Testing
-
-### Run Tests in Docker (Recommended)
-
-```bash
-# Run all tests
-docker compose exec web pytest
-
-# Run with verbose output
-docker compose exec web pytest -v
-
-# Run specific test file
-docker compose exec web pytest src/sites/tests/test_api.py
-
-# Run with coverage
-docker compose exec web pytest --cov
-```
-
-### Run Tests Locally
-
-**Important:** Ensure Docker PostgreSQL is running first:
-```bash
-# Start database
-docker compose up -d db
-
-# Run tests
-uv run pytest
-
-# With verbose output
-uv run pytest -v
-```
-
-The test suite uses:
-- **pytest** - Test framework
-- **pytest-django** - Django integration for pytest
-- **PostgreSQL** - Same database as production for accurate testing
-
-If you already activated `.venv`, `pytest` and `pytest -v` also work.
+---
 
 ## Contributing
 
-1. Create a new branch for your feature
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+1. Create a feature branch: `git checkout -b feature/your-feature-name`
+2. Make changes following the project structure
+3. Run tests: `uv run pytest`
+4. Run linters: `uv run ruff check .`
+5. Commit and push: `git push origin feature/your-feature-name`
+6. Open a pull request
 
-2. Make your changes following the project structure
-
-3. Run tests to ensure everything works
-   ```bash
-   docker compose exec web pytest
-   ```
-
-4. Run linters (if configured)
-   ```bash
-   docker compose exec web black .
-   docker compose exec web ruff check .
-   ```
-
-5. Commit your changes with a descriptive message
-   ```bash
-   git commit -m "Add: description of your changes"
-   ```
-
-6. Push and create a pull request
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+---
 
 ## Troubleshooting
 
 ### Port 5432 already in use
-
-If you get "port 5432 already in use" error, a local PostgreSQL is running on your machine. The Docker configuration already uses port 5433 externally to avoid this conflict.
-
-```bash
-# Check what's using port 5432
-sudo lsof -i :5432
-
-# If needed, stop local PostgreSQL
-sudo systemctl stop postgresql
-```
+A local PostgreSQL is running. The Docker setup uses port 5433 externally to avoid this conflict.
 
 ### "Cannot connect to database" when running locally
-
-Make sure:
-1. **Docker PostgreSQL is running**: `docker compose up -d db`
-2. Check container status: `docker compose ps`
-3. Your `.env` file has `POSTGRES_HOST=localhost` and `POSTGRES_PORT=5433`
-4. The `.env` file is in the project root directory
+1. Ensure Docker PostgreSQL is running: `docker compose up -d db`
+2. Check `.env` has `POSTGRES_HOST=localhost` and `POSTGRES_PORT=5433`
 
 ### Tests fail with "Connection refused"
+Start the database first: `docker compose up -d db`
 
-This means the PostgreSQL database isn't running:
-```bash
-# Start the database
-docker compose up -d db
-
-# Verify it's running
-docker compose ps
-
-# Run tests
-pytest
-```
-
-### POST `/api/sites/` returns 400 Bad Request
-
-Common causes:
-1. Duplicate `name` value (the field is unique)
-2. Invalid `status` (must be one of: `online`, `offline`, `degraded`)
-3. Missing or malformed JSON payload
-
-Quick check:
-```bash
-curl -sS -X POST http://127.0.0.1:8000/api/sites/ \
-   -H "Content-Type: application/json" \
-   -d '{"name":"cern-prod-2","region":"EU","status":"online","cpu_capacity":4096,"storage_tb":1000}' \
-   | python -m json.tool
-```
+### POST returns 400 Bad Request
+- Duplicate `name` (unique constraint)
+- Invalid `status` (must be `online`, `offline`, or `degraded`)
+- Invalid `protocol` for RSEs (must be `davs`, `srm`, `gsiftp`, `xrootd`, or `posix`)
 
 ### "Module not found" errors
-
-Reinstall dependencies:
 ```bash
-# In Docker
-docker compose down
-docker compose up --build
-
-# Locally
-uv sync
+uv sync          # local
+docker compose up --build  # Docker
 ```
 
-### Tests failing with "import file mismatch"
-
-Clear Python cache and rebuild:
-```bash
-docker compose down
-find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
-docker compose up --build
-```
-
-### Old `docker-compose` command not working
-
-Use `docker compose` (space, not hyphen) for Docker Compose V2:
-```bash
-# ❌ Old: docker-compose up
-# ✅ New: docker compose up
-```
+---
 
 ## License
 

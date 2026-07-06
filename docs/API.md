@@ -122,6 +122,95 @@ curl -X DELETE http://localhost:8000/api/sites/1/
 
 ---
 
+### 📦 RSEs API (Rucio Storage Elements)
+
+#### List All RSEs
+**URL:** http://localhost:8000/api/rses/  
+**Method:** GET  
+**Description:** Get all Rucio Storage Elements
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `site` | integer | Filter by site ID |
+| `protocol` | string | Filter by protocol (`davs`, `srm`, `gsiftp`, `xrootd`, `posix`) |
+| `enabled` | boolean | Filter by enabled state (`true`/`false`) |
+
+**Examples:**
+```bash
+# List all RSEs
+curl http://localhost:8000/api/rses/
+
+# Filter by site
+curl http://localhost:8000/api/rses/?site=1
+
+# Filter by protocol
+curl http://localhost:8000/api/rses/?protocol=xrootd
+
+# Filter by enabled state
+curl http://localhost:8000/api/rses/?enabled=true
+
+# Combine filters
+curl "http://localhost:8000/api/rses/?site=1&protocol=davs"
+```
+
+#### Create RSE
+**URL:** http://localhost:8000/api/rses/  
+**Method:** POST  
+**Description:** Create a new RSE
+
+**Example:**
+```bash
+curl -X POST http://localhost:8000/api/rses/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "CERN-PROD_DATADISK",
+    "site": 1,
+    "protocol": "xrootd",
+    "deterministic": true,
+    "free_tb": 500.0,
+    "used_tb": 300.0,
+    "enabled": true
+  }'
+```
+
+#### Get RSE Detail
+**URL:** http://localhost:8000/api/rses/{id}/  
+**Method:** GET
+
+```bash
+curl http://localhost:8000/api/rses/1/
+```
+
+#### Update RSE
+**URL:** http://localhost:8000/api/rses/{id}/  
+**Method:** PUT/PATCH
+
+```bash
+curl -X PATCH http://localhost:8000/api/rses/1/ \
+  -H "Content-Type: application/json" \
+  -d '{"free_tb": 450.0, "used_tb": 350.0}'
+```
+
+#### Delete RSE
+**URL:** http://localhost:8000/api/rses/{id}/  
+**Method:** DELETE
+
+```bash
+curl -X DELETE http://localhost:8000/api/rses/1/
+```
+
+#### Get RSEs by Site
+**URL:** http://localhost:8000/api/rses/by-site/{site_id}/  
+**Method:** GET  
+**Description:** Convenience endpoint returning all RSEs for a given site
+
+```bash
+curl http://localhost:8000/api/rses/by-site/3/
+```
+
+---
+
 ## Testing the API
 
 ### Using curl
@@ -264,6 +353,13 @@ curl http://localhost:8000/api/sites/
 | `/api/sites/{id}/` | PUT | Update site (full) |
 | `/api/sites/{id}/` | PATCH | Update site (partial) |
 | `/api/sites/{id}/` | DELETE | Delete site |
+| `/api/rses/` | GET | List all RSEs (filterable) |
+| `/api/rses/` | POST | Create RSE |
+| `/api/rses/{id}/` | GET | Get RSE detail |
+| `/api/rses/{id}/` | PUT | Update RSE (full) |
+| `/api/rses/{id}/` | PATCH | Update RSE (partial) |
+| `/api/rses/{id}/` | DELETE | Delete RSE |
+| `/api/rses/by-site/{site_id}/` | GET | List RSEs for a site |
 
 ---
 

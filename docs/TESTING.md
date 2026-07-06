@@ -94,6 +94,38 @@ src/sites/tests/test_api.py::test_create_and_list_sites PASSED [100%]
 1 passed in 0.41s
 ```
 
+## Desktop Client Tests
+
+The desktop client has its own test suite under `desktop/tests/`:
+
+```bash
+# Run all desktop tests (requires Qt offscreen mode)
+QT_QPA_PLATFORM=offscreen uv run pytest desktop/tests/ -v
+
+# Widget tests (site table, RSE table, main window)
+uv run pytest desktop/tests/test_site_table.py
+uv run pytest desktop/tests/test_rse_table.py
+uv run pytest desktop/tests/test_main_window.py
+uv run pytest desktop/tests/test_widgets.py
+
+# Python scorer tests
+uv run pytest desktop/tests/test_scorer.py
+
+# C++ scorer tests (requires built extension)
+uv run pytest desktop/tests/test_cpp_scorer.py
+```
+
+Note: `pyproject.toml` includes `desktop/tests` in `testpaths`, so `uv run pytest` runs both backend and desktop tests together.
+
+## CI Workflows
+
+Two GitHub Actions workflows run tests automatically:
+
+- **tests.yml** — Django API tests (PostgreSQL service) + desktop widget tests (`QT_QPA_PLATFORM=offscreen`)
+- **cpp-binding.yml** — Builds the C++ extension and runs `test_cpp_scorer.py` (triggered on `cpp/`, `CMakeLists.txt`, or scorer file changes)
+
+---
+
 ## Common Commands
 
 ### Database Management
