@@ -45,3 +45,6 @@ docs/COMMANDS.txt
 
 # dev guides
 dev_guides/
+
+# AI artifacts
+graphify-out/
