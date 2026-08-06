@@ -47,13 +47,6 @@ jobs:
 
       - name: Check no missing migrations
         run: uv run python manage.py migrate --check
-        env:
-          DJANGO_SETTINGS_MODULE: site_registry.settings
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_NAME: site_registry_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
 
       - name: Run tests
         run: uv run pytest
