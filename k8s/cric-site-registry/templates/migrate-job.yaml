@@ -7,7 +7,7 @@ metadata:
     {{- include "cric-site-registry.labels" . | nindent 4 }}
     app.kubernetes.io/component: migrate
   annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
@@ -19,6 +19,26 @@ spec:
         app.kubernetes.io/component: migrate
     spec:
       restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-c"]
+          args:
+            - |
+              import os, socket, time
+              host, port = os.environ["POSTGRES_HOST"], int(os.environ["POSTGRES_PORT"])
+              for _ in range(60):
+                  try:
+                      socket.create_connection((host, port), timeout=2).close()
+                      break
+                  except OSError:
+                      time.sleep(2)
+              else:
+                  raise SystemExit("timed out waiting for postgres")
+          envFrom:
+            - configMapRef:
+                name: {{ include "cric-site-registry.fullname" . }}-config
       containers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

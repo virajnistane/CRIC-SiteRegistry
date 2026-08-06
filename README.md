@@ -161,6 +161,67 @@ If the extension is not built, the desktop client falls back to the pure-Python 
 
 ---
 
+## Kubernetes (Helm)
+
+A Helm chart lives at `k8s/cric-site-registry/` and deploys the Django/Gunicorn web tier plus an in-cluster PostgreSQL StatefulSet.
+
+### Prerequisites
+
+- `helm` v3
+- `kubectl`
+- A cluster to deploy to (e.g. `minikube start --driver=docker`) and the app image built and loaded into it
+
+### Deploy
+
+```bash
+docker build -t cric-site-registry:latest .
+
+# local cluster only: make the image available without a registry push
+minikube image load cric-site-registry:latest
+
+helm install cric k8s/cric-site-registry --set image.pullPolicy=Never
+```
+
+The install runs `helm lint`-clean templates plus a `post-install`/`post-upgrade` Job (`templates/migrate-job.yaml`) that waits for Postgres to accept connections, then runs `migrate` and `collectstatic` before you interact with the app.
+
+### Verify
+
+```bash
+kubectl get pods,svc,statefulset,pvc -l app.kubernetes.io/instance=cric
+```
+![kubectl get pods](docs/images/k8s-kubectl-get.png)
+
+```bash
+helm test cric
+``` 
+![Helm test passing](docs/images/k8s-helm-test.png)
+
+```bash
+kubectl port-forward svc/cric-cric-site-registry-web 8000:80
+curl localhost:8000/ localhost:8000/api/sites/
+```
+![port forward curl](docs/images/k8s-curl-example.png)
+
+### Values worth overriding for anything beyond a local demo
+
+| Value | Purpose |
+|---|---|
+| `django.secretKey` | Django `SECRET_KEY` — the chart default is a documented-insecure placeholder |
+| `postgres.password` | Postgres password — same caveat |
+| `ingress.enabled` / `ingress.host` | Expose the web Service via Ingress instead of `kubectl port-forward` |
+| `autoscaling.enabled` | Turn on the HPA (CPU-based) instead of a fixed `replicaCount` |
+
+Pass secrets via `--set` or a separate, gitignored values file — never commit real `secretKey`/`password` values. `networkPolicy.enabled` (on by default) restricts inbound Postgres traffic to pods labeled `app.kubernetes.io/component: web`.
+
+### Static validation without a cluster
+
+```bash
+helm lint k8s/cric-site-registry
+helm template cric k8s/cric-site-registry --set ingress.enabled=true,autoscaling.enabled=true
+```
+
+---
+
 ## Data Models
 
 ### Site
