@@ -1,0 +1,13 @@
+apiVersion: v2
+name: cric-site-registry
+description: >
+  Helm chart for the CRIC Site Registry Django REST app - deploys the
+  gunicorn/DRF web tier plus an in-cluster PostgreSQL StatefulSet.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - django
+  - rest-framework
+  - postgresql
+  - cric

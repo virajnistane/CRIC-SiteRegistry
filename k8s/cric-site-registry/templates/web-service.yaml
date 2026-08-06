@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cric-site-registry.fullname" . }}-web
+  labels:
+    {{- include "cric-site-registry.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "cric-site-registry.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.web.port }}
+      protocol: TCP
+      name: http

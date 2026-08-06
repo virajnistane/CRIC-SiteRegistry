@@ -1,0 +1,73 @@
+replicaCount: 2
+
+image:
+  repository: cric-site-registry
+  tag: latest
+  pullPolicy: IfNotPresent
+
+web:
+  port: 8000
+  workers: 3
+
+django:
+  debug: "False"
+  allowedHosts: "*"
+  # SECURITY WARNING: override secretKey via --set or a values file that is
+  # NOT committed to source control (or an external Secret) for real use.
+  secretKey: "change-me-in-production"
+
+postgres:
+  image:
+    repository: postgres
+    tag: "17-alpine"
+  name: site_registry
+  user: postgres
+  # SECURITY WARNING: override for anything beyond local demo purposes.
+  password: postgres
+  storage: 1Gi
+  storageClassName: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: nginx
+  host: cric.local
+  annotations: {}
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 75
+
+networkPolicy:
+  enabled: true
+
+migrationJob:
+  # Runs `migrate` + `collectstatic` as a Helm pre-upgrade/pre-install hook
+  # before web pods roll out.
+  enabled: true
+
+probes:
+  path: /
+  initialDelaySeconds: 5
+  periodSeconds: 10
