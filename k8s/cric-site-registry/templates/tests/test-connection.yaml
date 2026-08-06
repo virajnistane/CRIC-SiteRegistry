@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "cric-site-registry.fullname" . }}-test-connection
+  labels:
+    {{- include "cric-site-registry.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      command:
+        - curl
+        - --fail
+        - --silent
+        - --show-error
+        - "http://{{ include "cric-site-registry.fullname" . }}-web:{{ .Values.service.port }}{{ .Values.probes.path }}"

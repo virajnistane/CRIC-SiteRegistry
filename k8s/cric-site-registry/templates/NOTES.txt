@@ -1,0 +1,22 @@
+CRIC Site Registry has been deployed.
+
+1. Wait for pods to become Ready:
+   kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -w
+
+2. Check the migration Job completed successfully:
+   kubectl get jobs -l app.kubernetes.io/instance={{ .Release.Name }}
+
+{{- if .Values.ingress.enabled }}
+3. The app is exposed via Ingress at:
+   http://{{ .Values.ingress.host }}
+{{- else }}
+3. The web Service is ClusterIP-only. Port-forward to reach it:
+   kubectl port-forward svc/{{ include "cric-site-registry.fullname" . }}-web 8000:{{ .Values.service.port }}
+   then visit http://localhost:8000/ and http://localhost:8000/api/sites/
+{{- end }}
+
+4. Run the built-in smoke test:
+   helm test {{ .Release.Name }}
+
+5. Create a Django superuser (optional):
+   kubectl exec -it deploy/{{ include "cric-site-registry.fullname" . }}-web -- python manage.py createsuperuser
